@@ -2,8 +2,22 @@
 
 import { Button } from "@/components/ui/button";
 import { useRef, useState } from "react";
+import ConversationUI from "../components/conversationUI";
 
 export default function Home() {
+  const [messages, setMessages] = useState([
+    {
+      role: "user",
+      content: "Hello!",
+      key: 0,
+    },
+    {
+      role: "assistant",
+      content: "Hey!",
+      key: 1,
+    },
+  ]);
+
   // refs - Remove typing??
   const audioRef = useRef<HTMLAudioElement>(null);
   const mediaRecRef = useRef<MediaRecorder | null>(null);
@@ -153,21 +167,7 @@ export default function Home() {
         </div>
       )}
 
-      {response && !isLoading && (
-        <div className="max-w-4xl w-full flex flex-col gap-6">
-          <div className="bg-white dark:bg-zinc-900 rounded-lg p-6 shadow-lg max-h-[70vh] overflow-y-auto">
-            <h2 className="text-2xl font-semibold mb-4">Response:</h2>
-            <p className="text-lg leading-relaxed">{response}</p>
-          </div>
-          <Button
-            size={"lg"}
-            className="text-3xl w-fit h-fit py-3 px-5 mx-auto"
-            onClick={reset}
-          >
-            New Chat
-          </Button>
-        </div>
-      )}
+      {response && !isLoading && <ConversationUI messages={messages} />}
 
       {error && (
         <div className="max-w-2xl w-full flex flex-col gap-6">
