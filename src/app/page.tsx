@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { useRef, useState } from "react";
 import ConversationUI from "../components/conversationUI";
+import { MicrophoneVisualizer } from "@/components/microphone-visualizer";
+import { LoadingIndicator } from "@/components/loading-indicator";
 
 interface MessagesType {
   role?: "user" | "assistant";
@@ -25,30 +27,30 @@ export default function Home() {
   const StartRecordingBtn = () => {
     if (!hasStarted) {
       return (
-        <Button
-          size={"lg"}
-          className="text-8xl w-fit h-fit py-7 px-10 rounded-2xl"
-          onClick={startRecording}
-        >
-          Start
-        </Button>
+        <div className="flex flex-col items-center gap-6 animate-fade-in">
+          <MicrophoneVisualizer
+            isRecording={false}
+            onClick={startRecording}
+            size="lg"
+            className="scale-125"
+          />
+          <p className="text-muted-foreground text-sm">Tap to begin</p>
+        </div>
       );
     }
     if (hasStarted && isRecording) {
       return (
-        <div className="flex flex-col items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse" />
-            <p className="text-xl">Recording...</p>
+        <div className="flex flex-col items-center gap-6 animate-fade-in">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+            <p className="text-lg font-medium">Listening...</p>
           </div>
-          <Button
-            size={"lg"}
-            className="text-5xl w-fit h-fit py-4 px-6"
+          <MicrophoneVisualizer
+            isRecording={true}
             onClick={stopRecording}
-            variant="destructive"
-          >
-            Stop
-          </Button>
+            size="lg"
+          />
+          <p className="text-muted-foreground text-sm">Tap to finish</p>
         </div>
       );
     }
@@ -163,14 +165,13 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem-0.05rem)] flex-col items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex h-[calc(100vh-4rem-0.05rem)] flex-col items-center justify-center relative overflow-hidden">
       <audio src="/start_sound.mp3" ref={audioRef} />
       <audio ref={respRef} />
 
       {isLoading && (
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100 rounded-full animate-spin" />
-          <p className="text-xl">Processing...</p>
+        <div className="absolute inset-0 flex items-center justify-center z-50 bg-background/95">
+          <LoadingIndicator message="Processing your request" />
         </div>
       )}
 
@@ -184,17 +185,27 @@ export default function Home() {
       />
 
       {error && (
-        <div className="max-w-2xl w-full flex flex-col gap-6">
-          <div className="bg-red-100 dark:bg-red-900 rounded-lg p-6">
-            <p className="text-red-900 dark:text-red-100">{error}</p>
+        <div className="absolute inset-0 flex items-center justify-center z-50 bg-background/95 animate-fade-in">
+          <div className="max-w-md w-full mx-4 flex flex-col gap-6">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-destructive text-sm font-bold">!</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">Error</h3>
+                  <p className="text-muted-foreground">{error}</p>
+                </div>
+              </div>
+            </div>
+            <Button
+              size="lg"
+              onClick={reset}
+              className="w-full rounded-xl transition-all"
+            >
+              Try Again
+            </Button>
           </div>
-          <Button
-            size={"lg"}
-            className="text-3xl w-fit h-fit py-3 px-5 mx-auto"
-            onClick={reset}
-          >
-            Try Again
-          </Button>
         </div>
       )}
     </div>

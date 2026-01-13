@@ -8,7 +8,6 @@ import {
 } from "@/components/ai/message";
 import {
   CopyIcon,
-  MessageSquareIcon,
   RefreshCcwIcon,
   ThumbsDownIcon,
   ThumbsUpIcon,
@@ -17,11 +16,9 @@ import { useState } from "react";
 import {
   Conversation,
   ConversationContent,
-  ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai/conversation";
-import { Button } from "@/components/ui/button";
-import { MicIcon } from "lucide-react";
+import { MicrophoneVisualizer } from "@/components/microphone-visualizer";
 
 const ConversationUI = ({
   messages,
@@ -51,107 +48,112 @@ const ConversationUI = ({
 
   return (
     <Conversation className="relative size-full">
-      <ConversationContent className="p-10">
+      <ConversationContent className="px-4 py-8 md:px-8 md:py-10 max-w-5xl mx-auto">
         {messages.length === 0 ? (
-          <div className="flex flex-col justify-center w-full h-full items-center gap-4 pt-[35vh]">
-            {/* <ConversationEmptyState
-              icon={<MessageSquareIcon className="size-6" />}
-              title="Start a conversation"
-            /> */}
-            <StartRecordingBtn />
+          <div className="flex flex-col justify-center w-full h-full items-center gap-6 pt-[30vh] animate-fade-in">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <h1 className="text-3xl md:text-4xl font-bold">
+                Voice Assistant
+              </h1>
+              <p className="text-muted-foreground text-base md:text-lg max-w-md">
+                Tap the microphone to start a conversation
+              </p>
+            </div>
+            <div className="mt-8">
+              <StartRecordingBtn />
+            </div>
           </div>
         ) : (
-          messages.map((message, id) => (
-            <Message from={message.role} key={id}>
-              <MessageContent>
-                {message.role === "assistant" ? (
-                  <MessageResponse>{message.content}</MessageResponse>
-                ) : (
-                  message.content
-                )}
-              </MessageContent>
+          <div className="space-y-6">
+            {messages.map((message, id) => (
+              <div key={id} className="animate-slide-up">
+                <Message from={message.role}>
+                  <MessageContent>
+                    {message.role === "assistant" ? (
+                      <MessageResponse>{message.content}</MessageResponse>
+                    ) : (
+                      message.content
+                    )}
+                  </MessageContent>
 
-              {message.role === "assistant" && (
-                <MessageActions>
-                  <MessageAction
-                    label="Retry"
-                    onClick={handleRetry}
-                    tooltip="Regenerate response"
-                  >
-                    <RefreshCcwIcon className="size-4" />
-                  </MessageAction>
+                  {message.role === "assistant" && (
+                    <MessageActions>
+                      <MessageAction
+                        label="Retry"
+                        onClick={handleRetry}
+                        tooltip="Regenerate response"
+                      >
+                        <RefreshCcwIcon className="size-4" />
+                      </MessageAction>
 
-                  <MessageAction
-                    label="Like"
-                    onClick={() =>
-                      setLiked((prev) => ({
-                        ...prev,
-                        [id]: !prev[id],
-                      }))
-                    }
-                    tooltip="Like this response"
-                  >
-                    <ThumbsUpIcon
-                      className="size-4"
-                      fill={liked[id] ? "currentColor" : "none"}
-                    />
-                  </MessageAction>
+                      <MessageAction
+                        label="Like"
+                        onClick={() =>
+                          setLiked((prev) => ({
+                            ...prev,
+                            [id]: !prev[id],
+                          }))
+                        }
+                        tooltip="Like this response"
+                      >
+                        <ThumbsUpIcon
+                          className="size-4"
+                          fill={liked[id] ? "currentColor" : "none"}
+                        />
+                      </MessageAction>
 
-                  <MessageAction
-                    label="Dislike"
-                    onClick={() =>
-                      setDisliked((prev) => ({
-                        ...prev,
-                        [id]: !prev[id],
-                      }))
-                    }
-                    tooltip="Dislike this response"
-                  >
-                    <ThumbsDownIcon
-                      className="size-4"
-                      fill={disliked[id] ? "currentColor" : "none"}
-                    />
-                  </MessageAction>
+                      <MessageAction
+                        label="Dislike"
+                        onClick={() =>
+                          setDisliked((prev) => ({
+                            ...prev,
+                            [id]: !prev[id],
+                          }))
+                        }
+                        tooltip="Dislike this response"
+                      >
+                        <ThumbsDownIcon
+                          className="size-4"
+                          fill={disliked[id] ? "currentColor" : "none"}
+                        />
+                      </MessageAction>
 
-                  <MessageAction
-                    label="Copy"
-                    onClick={() => handleCopy(message.content)}
-                    tooltip="Copy to clipboard"
-                  >
-                    <CopyIcon className="size-4" />
-                  </MessageAction>
-                </MessageActions>
-              )}
-            </Message>
-          ))
+                      <MessageAction
+                        label="Copy"
+                        onClick={() => handleCopy(message.content)}
+                        tooltip="Copy to clipboard"
+                      >
+                        <CopyIcon className="size-4" />
+                      </MessageAction>
+                    </MessageActions>
+                  )}
+                </Message>
+              </div>
+            ))}
+          </div>
         )}
       </ConversationContent>
       <ConversationScrollButton />
 
       {messages.length > 0 && !isLoading && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-slide-up">
           {!isRecording ? (
-            <Button
-              size="lg"
+            <MicrophoneVisualizer
+              isRecording={false}
               onClick={onStartRecording}
-              className="rounded-full h-16 w-16 p-0 shadow-lg hover:shadow-xl transition-all"
-            >
-              <MicIcon className="size-6" />
-            </Button>
+              size="lg"
+            />
           ) : (
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-full shadow-lg border">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex items-center gap-3 bg-card px-6 py-3 rounded-full border border-border">
+                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                 <span className="text-sm font-medium">Recording...</span>
               </div>
-              <Button
-                size="lg"
+              <MicrophoneVisualizer
+                isRecording={true}
                 onClick={onStopRecording}
-                variant="destructive"
-                className="rounded-full h-14 w-14 p-0 shadow-lg"
-              >
-                <span className="text-xl">■</span>
-              </Button>
+                size="md"
+              />
             </div>
           )}
         </div>
