@@ -5,22 +5,32 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
-    const { text } = await request.json();
+    const { searchParams } = new URL(request.url);
+    const text = searchParams.get("text");
+
     if (!text) {
-      return NextResponse.json({ error: "no text found" }, { status: 500 });
+      return NextResponse.json({ error: "no text found" }, { status: 400 });
     }
-    const mp3 = await openai.audio.speech.create({
+
+    const response = await openai.audio.speech.create({
       model: "tts-1",
       voice: "alloy",
       input: text,
+      response_format: "mp3",
     });
-    const buffer = Buffer.from(await mp3.arrayBuffer());
-    return new NextResponse(buffer, {
+
+    const stream = response.body;
+
+    if (!stream) {
+      throw new Error("No stream available");
+    }
+
+    return new NextResponse(stream, {
       headers: {
         "Content-Type": "audio/mpeg",
-        "Content-Length": buffer.length.toString(),
+        "Cache-Control": "no-cache",
       },
     });
   } catch (error) {

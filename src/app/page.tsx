@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useRef, useState } from "react";
 import ConversationUI from "../components/conversationUI";
 import { MicrophoneVisualizer } from "@/components/microphone-visualizer";
-import { LoadingIndicator } from "@/components/loading-indicator";
 
 interface MessagesType {
   role?: "user" | "assistant";
@@ -21,7 +20,6 @@ export default function Home() {
 
   const [hasStarted, setHasStarted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
   const StartRecordingBtn = () => {
@@ -96,8 +94,6 @@ export default function Home() {
   };
 
   const processVoiceChat = async (audioBlob: Blob) => {
-    setIsLoading(true);
-
     try {
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.webm");
@@ -110,6 +106,16 @@ export default function Home() {
         throw new Error("couldn't transcribe audio");
       }
       const { text } = await transcript.json();
+
+      // Add user message immediately
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "user",
+          content: text,
+        },
+      ]);
+
       const chatRes = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -122,45 +128,59 @@ export default function Home() {
         throw new Error("failed to get chat response");
       }
 
-      const { response: chatResponse } = await chatRes.json();
-      setMessages([
-        ...messages,
-        {
-          role: "user",
-          content: text,
-        },
-        {
-          role: "assistant",
-          content: chatResponse,
-        },
-      ]);
-      const tts = await fetch("/api/text-to-speech", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: chatResponse }),
-      });
-      if (!tts.ok) {
-        throw new Error("Failed to convert text to speech");
+      // Handle streaming response
+      const reader = chatRes.body?.getReader();
+      const decoder = new TextDecoder();
+      let chatResponse = "";
+
+      if (!reader) {
+        throw new Error("No response stream available");
       }
 
-      const audiodata = await tts.blob();
-      const audiobloburl = URL.createObjectURL(audiodata);
+      // Add empty assistant message that will be updated
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "",
+        },
+      ]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        chatResponse += chunk;
+
+        // Update the last message (assistant) with streaming content
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = {
+            role: "assistant",
+            content: chatResponse,
+          };
+          return newMessages;
+        });
+      }
+
+      // Now get the TTS response - use direct URL for streaming
+      const encodedText = encodeURIComponent(chatResponse);
+      const ttsUrl = `/api/text-to-speech?text=${encodedText}`;
+
       if (respRef.current) {
-        respRef.current.src = audiobloburl;
+        respRef.current.src = ttsUrl;
         respRef.current.play();
       }
     } catch (err) {
       console.error("error:", err);
       setError(err instanceof Error ? err.message : "error occurred");
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const reset = () => {
     setHasStarted(false);
     setIsRecording(false);
-    setIsLoading(false);
     setError("");
   };
 
@@ -169,17 +189,10 @@ export default function Home() {
       <audio src="/start_sound.mp3" ref={audioRef} />
       <audio ref={respRef} />
 
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center z-50 bg-background/95">
-          <LoadingIndicator message="Processing your request" />
-        </div>
-      )}
-
       <ConversationUI
         messages={messages}
         StartRecordingBtn={StartRecordingBtn}
         isRecording={isRecording}
-        isLoading={isLoading}
         onStartRecording={startRecording}
         onStopRecording={stopRecording}
       />

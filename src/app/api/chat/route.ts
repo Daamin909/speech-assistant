@@ -29,9 +29,32 @@ export async function POST(request: Request) {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: messagesWithSystem,
+      stream: true,
     });
-    const responseText = completion.choices[0]?.message?.content || "";
-    return NextResponse.json({ response: responseText });
+
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of completion) {
+            const content = chunk.choices[0]?.delta?.content || "";
+            if (content) {
+              controller.enqueue(encoder.encode(content));
+            }
+          }
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+      },
+    });
   } catch (error) {
     console.error("error:", error);
     return NextResponse.json(

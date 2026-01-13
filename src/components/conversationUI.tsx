@@ -24,14 +24,12 @@ const ConversationUI = ({
   messages,
   StartRecordingBtn,
   isRecording,
-  isLoading,
   onStartRecording,
   onStopRecording,
 }: {
   messages: any[];
   StartRecordingBtn: any;
   isRecording: boolean;
-  isLoading: boolean;
   onStartRecording: () => void;
   onStopRecording: () => void;
 }) => {
@@ -135,7 +133,7 @@ const ConversationUI = ({
       </ConversationContent>
       <ConversationScrollButton />
 
-      {messages.length > 0 && !isLoading && (
+      {messages.length > 0 && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-slide-up">
           {!isRecording ? (
             <MicrophoneVisualizer
