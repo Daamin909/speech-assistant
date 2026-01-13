@@ -20,8 +20,24 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai/conversation";
+import { Button } from "@/components/ui/button";
+import { MicIcon } from "lucide-react";
 
-const ConversationUI = ({ messages }: { messages: any[] }) => {
+const ConversationUI = ({
+  messages,
+  StartRecordingBtn,
+  isRecording,
+  isLoading,
+  onStartRecording,
+  onStopRecording,
+}: {
+  messages: any[];
+  StartRecordingBtn: any;
+  isRecording: boolean;
+  isLoading: boolean;
+  onStartRecording: () => void;
+  onStopRecording: () => void;
+}) => {
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [disliked, setDisliked] = useState<Record<string, boolean>>({});
 
@@ -35,16 +51,18 @@ const ConversationUI = ({ messages }: { messages: any[] }) => {
 
   return (
     <Conversation className="relative size-full">
-      <ConversationContent>
+      <ConversationContent className="p-10">
         {messages.length === 0 ? (
-          <ConversationEmptyState
-            description="Messages will appear here as the conversation progresses."
-            icon={<MessageSquareIcon className="size-6" />}
-            title="Start a conversation"
-          />
+          <div className="flex flex-col justify-center w-full h-full items-center gap-4 pt-[35vh]">
+            {/* <ConversationEmptyState
+              icon={<MessageSquareIcon className="size-6" />}
+              title="Start a conversation"
+            /> */}
+            <StartRecordingBtn />
+          </div>
         ) : (
-          messages.map((message) => (
-            <Message from={message.role} key={message.key}>
+          messages.map((message, id) => (
+            <Message from={message.role} key={id}>
               <MessageContent>
                 {message.role === "assistant" ? (
                   <MessageResponse>{message.content}</MessageResponse>
@@ -68,14 +86,14 @@ const ConversationUI = ({ messages }: { messages: any[] }) => {
                     onClick={() =>
                       setLiked((prev) => ({
                         ...prev,
-                        [message.key]: !prev[message.key],
+                        [id]: !prev[id],
                       }))
                     }
                     tooltip="Like this response"
                   >
                     <ThumbsUpIcon
                       className="size-4"
-                      fill={liked[message.key] ? "currentColor" : "none"}
+                      fill={liked[id] ? "currentColor" : "none"}
                     />
                   </MessageAction>
 
@@ -84,14 +102,14 @@ const ConversationUI = ({ messages }: { messages: any[] }) => {
                     onClick={() =>
                       setDisliked((prev) => ({
                         ...prev,
-                        [message.key]: !prev[message.key],
+                        [id]: !prev[id],
                       }))
                     }
                     tooltip="Dislike this response"
                   >
                     <ThumbsDownIcon
                       className="size-4"
-                      fill={disliked[message.key] ? "currentColor" : "none"}
+                      fill={disliked[id] ? "currentColor" : "none"}
                     />
                   </MessageAction>
 
@@ -109,6 +127,35 @@ const ConversationUI = ({ messages }: { messages: any[] }) => {
         )}
       </ConversationContent>
       <ConversationScrollButton />
+
+      {messages.length > 0 && !isLoading && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
+          {!isRecording ? (
+            <Button
+              size="lg"
+              onClick={onStartRecording}
+              className="rounded-full h-16 w-16 p-0 shadow-lg hover:shadow-xl transition-all"
+            >
+              <MicIcon className="size-6" />
+            </Button>
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-full shadow-lg border">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-sm font-medium">Recording...</span>
+              </div>
+              <Button
+                size="lg"
+                onClick={onStopRecording}
+                variant="destructive"
+                className="rounded-full h-14 w-14 p-0 shadow-lg"
+              >
+                <span className="text-xl">■</span>
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </Conversation>
   );
 };

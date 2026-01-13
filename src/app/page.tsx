@@ -4,19 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useRef, useState } from "react";
 import ConversationUI from "../components/conversationUI";
 
+interface MessagesType {
+  role?: "user" | "assistant";
+  content?: string;
+}
 export default function Home() {
-  const [messages, setMessages] = useState([
-    {
-      role: "user",
-      content: "Hello!",
-      key: 0,
-    },
-    {
-      role: "assistant",
-      content: "Hey!",
-      key: 1,
-    },
-  ]);
+  const [messages, setMessages] = useState<MessagesType[]>([]);
 
   // refs - Remove typing??
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -27,8 +20,39 @@ export default function Home() {
   const [hasStarted, setHasStarted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [response, setResponse] = useState("");
   const [error, setError] = useState("");
+
+  const StartRecordingBtn = () => {
+    if (!hasStarted) {
+      return (
+        <Button
+          size={"lg"}
+          className="text-8xl w-fit h-fit py-7 px-10 rounded-2xl"
+          onClick={startRecording}
+        >
+          Start
+        </Button>
+      );
+    }
+    if (hasStarted && isRecording) {
+      return (
+        <div className="flex flex-col items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse" />
+            <p className="text-xl">Recording...</p>
+          </div>
+          <Button
+            size={"lg"}
+            className="text-5xl w-fit h-fit py-4 px-6"
+            onClick={stopRecording}
+            variant="destructive"
+          >
+            Stop
+          </Button>
+        </div>
+      );
+    }
+  };
 
   const startRecording = async () => {
     try {
@@ -71,7 +95,6 @@ export default function Home() {
 
   const processVoiceChat = async (audioBlob: Blob) => {
     setIsLoading(true);
-    setResponse("");
 
     try {
       const formData = new FormData();
@@ -88,7 +111,9 @@ export default function Home() {
       const chatRes = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({
+          messages: [...messages, { role: "user", content: text }],
+        }),
       });
 
       if (!chatRes.ok) {
@@ -96,7 +121,17 @@ export default function Home() {
       }
 
       const { response: chatResponse } = await chatRes.json();
-      setResponse(chatResponse);
+      setMessages([
+        ...messages,
+        {
+          role: "user",
+          content: text,
+        },
+        {
+          role: "assistant",
+          content: chatResponse,
+        },
+      ]);
       const tts = await fetch("/api/text-to-speech", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -124,41 +159,13 @@ export default function Home() {
     setHasStarted(false);
     setIsRecording(false);
     setIsLoading(false);
-    setResponse("");
     setError("");
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 font-sans dark:bg-black p-8">
+    <div className="flex h-[calc(100vh-4rem-0.05rem)] flex-col items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <audio src="/start_sound.mp3" ref={audioRef} />
       <audio ref={respRef} />
-
-      {!hasStarted && (
-        <Button
-          size={"lg"}
-          className="text-7xl w-fit h-fit py-5 px-7"
-          onClick={startRecording}
-        >
-          Start
-        </Button>
-      )}
-
-      {hasStarted && isRecording && (
-        <div className="flex flex-col items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse" />
-            <p className="text-xl">Recording...</p>
-          </div>
-          <Button
-            size={"lg"}
-            className="text-5xl w-fit h-fit py-4 px-6"
-            onClick={stopRecording}
-            variant="destructive"
-          >
-            Stop
-          </Button>
-        </div>
-      )}
 
       {isLoading && (
         <div className="flex flex-col items-center gap-4">
@@ -167,7 +174,14 @@ export default function Home() {
         </div>
       )}
 
-      {response && !isLoading && <ConversationUI messages={messages} />}
+      <ConversationUI
+        messages={messages}
+        StartRecordingBtn={StartRecordingBtn}
+        isRecording={isRecording}
+        isLoading={isLoading}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+      />
 
       {error && (
         <div className="max-w-2xl w-full flex flex-col gap-6">
