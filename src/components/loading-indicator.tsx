@@ -19,11 +19,11 @@ export const LoadingIndicator = ({
       )}
     >
       <div className="relative">
-        <div className="w-16 h-16 rounded-full border-4 border-muted border-t-foreground animate-spin" />
+        <div className="w-24 h-24 rounded-full border-4 border-muted border-t-foreground animate-spin" />
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <p className="text-lg font-medium">{message}</p>
+        <p className="text-2xl font-medium">{message}</p>
       </div>
     </div>
   );

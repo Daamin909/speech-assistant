@@ -58,7 +58,7 @@ const ConversationUI = ({
         {messages.length === 0 ? (
           <div className="flex flex-col justify-center w-full h-full items-center gap-6 pt-[30vh] animate-fade-in">
             <div className="flex flex-col items-center gap-4 text-center">
-              <h1 className="text-4xl md:text-5xl font-bold">
+              <h1 className="text-5xl md:text-6xl font-bold">
                 speech-assistant
               </h1>
             </div>
