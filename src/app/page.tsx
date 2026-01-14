@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useRef, useState } from "react";
 import ConversationUI from "../components/conversationUI";
 import { MicrophoneVisualizer } from "@/components/microphone-visualizer";
+import { processVoiceChat } from "@/utils/processVoiceChat";
 
 interface MessagesType {
   role?: "user" | "assistant";
@@ -57,8 +58,9 @@ export default function Home() {
   const startRecording = async () => {
     try {
       setHasStarted(true);
-      audioRef.current?.play();
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      setIsRecording(true); 
+      audioRef.current?.play(); 
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecRef.current = mediaRecorder;
@@ -69,12 +71,11 @@ export default function Home() {
           chunksRef.current.push(event.data);
         }
       };
-
       mediaRecorder.start();
-      setIsRecording(true);
       setError("");
     } catch (err) {
       console.error("recording couldn't start:", err);
+      setIsRecording(false); 
       setError("microphone access denied");
     }
   };
@@ -88,102 +89,14 @@ export default function Home() {
         mediaRecRef.current?.stream
           .getTracks()
           .forEach((track) => track.stop());
-        await processVoiceChat(audioBlob);
+        await processVoiceChat(
+          audioBlob,
+          setMessages,
+          messages,
+          respRef,
+          setError
+        );
       };
-    }
-  };
-
-  const processVoiceChat = async (audioBlob: Blob) => {
-    try {
-      const formData = new FormData();
-      formData.append("audio", audioBlob, "recording.webm");
-      const transcript = await fetch("/api/speech-to-text", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!transcript.ok) {
-        throw new Error("couldn't transcribe audio");
-      }
-      const { text } = await transcript.json();
-
-      // Add user message immediately
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "user",
-          content: text,
-        },
-      ]);
-
-      const chatRes = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [...messages, { role: "user", content: text }],
-        }),
-      });
-
-      if (!chatRes.ok) {
-        throw new Error("failed to get chat response");
-      }
-
-      // Handle streaming response
-      const reader = chatRes.body?.getReader();
-      const decoder = new TextDecoder();
-      let chatResponse = "";
-
-      if (!reader) {
-        throw new Error("No response stream available");
-      }
-
-      // Add empty assistant message that will be updated
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "",
-        },
-      ]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        chatResponse += chunk;
-
-        // Update the last message (assistant) with streaming content
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = {
-            role: "assistant",
-            content: chatResponse,
-          };
-          return newMessages;
-        });
-      }
-
-      const ttsResponse = await fetch("/api/text-to-speech", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: chatResponse }),
-      });
-
-      if (!ttsResponse.ok) {
-        throw new Error("Failed to get TTS response");
-      }
-
-      const ttsAudioBlob = await ttsResponse.blob();
-      const audioUrl = URL.createObjectURL(ttsAudioBlob);
-
-      if (respRef.current) {
-        respRef.current.src = audioUrl;
-        respRef.current.play();
-      }
-    } catch (err) {
-      console.error("error:", err);
-      setError(err instanceof Error ? err.message : "error occurred");
     }
   };
 
@@ -205,7 +118,6 @@ export default function Home() {
         onStartRecording={startRecording}
         onStopRecording={stopRecording}
       />
-
       {error && (
         <div className="absolute inset-0 flex items-center justify-center z-50 bg-background/95 animate-fade-in">
           <div className="max-w-md w-full mx-4 flex flex-col gap-6">

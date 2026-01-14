@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import {
   Message,
@@ -42,6 +43,14 @@ const ConversationUI = ({
 
   const handleRetry = () => {
     console.log("Retrying...");
+  };
+
+  const handleMicrophoneClick = () => {
+    if (isRecording) {
+      onStopRecording();
+    } else {
+      onStartRecording();
+    }
   };
 
   return (
@@ -131,27 +140,14 @@ const ConversationUI = ({
       <ConversationScrollButton />
 
       {messages.length > 0 && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-slide-up">
-          {!isRecording ? (
-            <MicrophoneVisualizer
-              isRecording={false}
-              onClick={onStartRecording}
-              size="lg"
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex items-center gap-3 bg-card px-6 py-3 rounded-full border border-border">
-                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-sm font-medium">Recording...</span>
-              </div>
-              <MicrophoneVisualizer
-                isRecording={true}
-                onClick={onStopRecording}
-                size="md"
-              />
-            </div>
-          )}
-        </div>
+        <aside className="fixed right-8 bottom-8 z-10">
+          <MicrophoneVisualizer
+            isRecording={isRecording}
+            onClick={handleMicrophoneClick}
+            size="lg"
+            className="scale-125"
+          />
+        </aside>
       )}
     </Conversation>
   );

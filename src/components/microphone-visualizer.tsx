@@ -35,7 +35,7 @@ export const MicrophoneVisualizer = ({
         onClick={onClick}
         className={cn(
           sizeClasses[size],
-          "relative z-10 rounded-full transition-all duration-200",
+          "relative z-10 transition-all duration-200 rounded-2xl",
           "flex items-center justify-center border-2",
           isRecording
             ? "bg-red-500 hover:bg-red-600 border-red-600"
