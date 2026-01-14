@@ -80,60 +80,6 @@ const ConversationUI = ({
                       message.content
                     )}
                   </MessageContent>
-
-                  {message.role === "assistant" && (
-                    <MessageActions>
-                      {onRetry && (
-                        <MessageAction
-                          label="Retry"
-                          onClick={() => onRetry(index)}
-                          tooltip="Regenerate response"
-                        >
-                          <RefreshCcwIcon className="size-4" />
-                        </MessageAction>
-                      )}
-
-                      <MessageAction
-                        label="Like"
-                        onClick={() =>
-                          setLiked((prev) => ({
-                            ...prev,
-                            [index]: !prev[index],
-                          }))
-                        }
-                        tooltip="Like this response"
-                      >
-                        <ThumbsUpIcon
-                          className="size-4"
-                          fill={liked[index] ? "currentColor" : "none"}
-                        />
-                      </MessageAction>
-
-                      <MessageAction
-                        label="Dislike"
-                        onClick={() =>
-                          setDisliked((prev) => ({
-                            ...prev,
-                            [index]: !prev[index],
-                          }))
-                        }
-                        tooltip="Dislike this response"
-                      >
-                        <ThumbsDownIcon
-                          className="size-4"
-                          fill={disliked[index] ? "currentColor" : "none"}
-                        />
-                      </MessageAction>
-
-                      <MessageAction
-                        label="Copy"
-                        onClick={() => handleCopy(message.content)}
-                        tooltip="Copy to clipboard"
-                      >
-                        <CopyIcon className="size-4" />
-                      </MessageAction>
-                    </MessageActions>
-                  )}
                 </Message>
               </div>
             ))}

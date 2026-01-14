@@ -245,7 +245,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
             </div>
           </div>
           {/* Right side */}
-          <div className="flex items-center gap-3">
+          {/* <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="sm"
@@ -267,7 +267,7 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
             >
               {ctaText}
             </Button>
-          </div>
+          </div> */}
         </div>
       </header>
     );
