@@ -5,8 +5,8 @@ import {
   MessageAction,
   MessageActions,
   MessageContent,
-  MessageResponse,
 } from "@/components/ai/message";
+import { EnhancedMessageResponse } from "@/components/enhanced-message-response";
 import {
   CopyIcon,
   RefreshCcwIcon,
@@ -74,7 +74,9 @@ const ConversationUI = ({
                 <Message from={message.role}>
                   <MessageContent>
                     {message.role === "assistant" ? (
-                      <MessageResponse>{message.content}</MessageResponse>
+                      <EnhancedMessageResponse>
+                        {message.content}
+                      </EnhancedMessageResponse>
                     ) : (
                       message.content
                     )}

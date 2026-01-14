@@ -24,7 +24,6 @@ const processVoiceChat = async (
     }
     const { text } = await transcript.json();
 
-    // Add user message immediately
     setMessages((prev: any) => [
       ...prev,
       {
@@ -45,7 +44,6 @@ const processVoiceChat = async (
       throw new Error("failed to get chat response");
     }
 
-    // Handle streaming response
     const reader = chatRes.body?.getReader();
     const decoder = new TextDecoder();
     let chatResponse = "";
@@ -54,7 +52,6 @@ const processVoiceChat = async (
       throw new Error("No response stream available");
     }
 
-    // Add empty assistant message that will be updated
     setMessages((prev: any) => [
       ...prev,
       {
@@ -70,7 +67,6 @@ const processVoiceChat = async (
       const chunk = decoder.decode(value, { stream: true });
       chatResponse += chunk;
 
-      // Update the last message (assistant) with streaming content
       setMessages((prev: any) => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
@@ -81,10 +77,12 @@ const processVoiceChat = async (
       });
     }
 
+    const cleanedText = chatResponse.replace(/\$\$%%/g, "");
+
     const ttsResponse = await fetch("/api/text-to-speech", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: chatResponse }),
+      body: JSON.stringify({ text: cleanedText }),
     });
 
     if (!ttsResponse.ok) {

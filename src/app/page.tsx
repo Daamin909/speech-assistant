@@ -24,6 +24,8 @@ export default function Home() {
   const [error, setError] = useState("");
 
   const StartRecordingBtn = () => {
+
+
     if (!hasStarted) {
       return (
         <div className="flex flex-col items-center gap-6 animate-fade-in">
@@ -58,8 +60,8 @@ export default function Home() {
   const startRecording = async () => {
     try {
       setHasStarted(true);
-      setIsRecording(true); 
-      audioRef.current?.play(); 
+      setIsRecording(true);
+      audioRef.current?.play();
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -75,7 +77,7 @@ export default function Home() {
       setError("");
     } catch (err) {
       console.error("recording couldn't start:", err);
-      setIsRecording(false); 
+      setIsRecording(false);
       setError("microphone access denied");
     }
   };
