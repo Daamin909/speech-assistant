@@ -21,6 +21,7 @@ Each conversation session should follow this flow:
 * Keep it natural and friendly
 * Gradually introduce unexpected topics to keep them engaged: "What's your favorite movie?", "Tell me about a place you'd love to visit", "What makes you laugh?"
 * ALL MENTIONED PHRASES ARE JUST EXAMPLES. DON'T USE THESE.
+* Keep this going for a FEW messages only, move to exercises.
 
 **Phase 2: Structured Practice Exercises (4-6 repetitions, INITIATE ON YOUR OWN )**
 * Based on the conversation topic, ask them to practice specific sentences
