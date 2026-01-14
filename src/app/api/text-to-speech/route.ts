@@ -5,10 +5,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const text = searchParams.get("text");
+    const { text } = await request.json();
 
     if (!text) {
       return NextResponse.json({ error: "no text found" }, { status: 400 });

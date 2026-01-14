@@ -164,12 +164,21 @@ export default function Home() {
         });
       }
 
-      // Now get the TTS response - use direct URL for streaming
-      const encodedText = encodeURIComponent(chatResponse);
-      const ttsUrl = `/api/text-to-speech?text=${encodedText}`;
+      const ttsResponse = await fetch("/api/text-to-speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: chatResponse }),
+      });
+
+      if (!ttsResponse.ok) {
+        throw new Error("Failed to get TTS response");
+      }
+
+      const ttsAudioBlob = await ttsResponse.blob();
+      const audioUrl = URL.createObjectURL(ttsAudioBlob);
 
       if (respRef.current) {
-        respRef.current.src = ttsUrl;
+        respRef.current.src = audioUrl;
         respRef.current.play();
       }
     } catch (err) {

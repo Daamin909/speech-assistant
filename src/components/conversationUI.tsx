@@ -51,11 +51,8 @@ const ConversationUI = ({
           <div className="flex flex-col justify-center w-full h-full items-center gap-6 pt-[30vh] animate-fade-in">
             <div className="flex flex-col items-center gap-4 text-center">
               <h1 className="text-3xl md:text-4xl font-bold">
-                Voice Assistant
+                speech-assistant
               </h1>
-              <p className="text-muted-foreground text-base md:text-lg max-w-md">
-                Tap the microphone to start a conversation
-              </p>
             </div>
             <div className="mt-8">
               <StartRecordingBtn />
