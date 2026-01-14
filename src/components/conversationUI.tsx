@@ -58,7 +58,7 @@ const ConversationUI = ({
         {messages.length === 0 ? (
           <div className="flex flex-col justify-center w-full h-full items-center gap-6 pt-[30vh] animate-fade-in">
             <div className="flex flex-col items-center gap-4 text-center">
-              <h1 className="text-3xl md:text-4xl font-bold">
+              <h1 className="text-4xl md:text-5xl font-bold">
                 speech-assistant
               </h1>
             </div>
@@ -67,7 +67,7 @@ const ConversationUI = ({
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {messages.map((message, index) => (
               <div key={index} className="animate-slide-up">
                 <Message from={message.role}>
