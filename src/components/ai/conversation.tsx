@@ -1,7 +1,5 @@
 "use client";
 
-export const title = "React AI Conversation";
-
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowDownIcon } from "lucide-react";

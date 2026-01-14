@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import {
   Message,
@@ -13,13 +12,14 @@ import {
   ThumbsDownIcon,
   ThumbsUpIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai/conversation";
 import { MicrophoneVisualizer } from "@/components/microphone-visualizer";
+import type { ChatMessage } from "@/types/chat";
 
 const ConversationUI = ({
   messages,
@@ -27,22 +27,21 @@ const ConversationUI = ({
   isRecording,
   onStartRecording,
   onStopRecording,
+  onRetry,
 }: {
-  messages: any[];
-  StartRecordingBtn: any;
+  messages: ChatMessage[];
+  StartRecordingBtn: ComponentType;
   isRecording: boolean;
   onStartRecording: () => void;
   onStopRecording: () => void;
+  onRetry?: (messageIndex: number) => void;
 }) => {
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [disliked, setDisliked] = useState<Record<string, boolean>>({});
 
   const handleCopy = (content: string) => {
-    navigator.clipboard.writeText(content);
-  };
-
-  const handleRetry = () => {
-    console.log("Retrying...");
+    if (!navigator?.clipboard) return;
+    void navigator.clipboard.writeText(content).catch(() => {});
   };
 
   const handleMicrophoneClick = () => {
@@ -69,8 +68,8 @@ const ConversationUI = ({
           </div>
         ) : (
           <div className="space-y-6">
-            {messages.map((message, id) => (
-              <div key={id} className="animate-slide-up">
+            {messages.map((message, index) => (
+              <div key={index} className="animate-slide-up">
                 <Message from={message.role}>
                   <MessageContent>
                     {message.role === "assistant" ? (
@@ -84,27 +83,29 @@ const ConversationUI = ({
 
                   {message.role === "assistant" && (
                     <MessageActions>
-                      <MessageAction
-                        label="Retry"
-                        onClick={handleRetry}
-                        tooltip="Regenerate response"
-                      >
-                        <RefreshCcwIcon className="size-4" />
-                      </MessageAction>
+                      {onRetry && (
+                        <MessageAction
+                          label="Retry"
+                          onClick={() => onRetry(index)}
+                          tooltip="Regenerate response"
+                        >
+                          <RefreshCcwIcon className="size-4" />
+                        </MessageAction>
+                      )}
 
                       <MessageAction
                         label="Like"
                         onClick={() =>
                           setLiked((prev) => ({
                             ...prev,
-                            [id]: !prev[id],
+                            [index]: !prev[index],
                           }))
                         }
                         tooltip="Like this response"
                       >
                         <ThumbsUpIcon
                           className="size-4"
-                          fill={liked[id] ? "currentColor" : "none"}
+                          fill={liked[index] ? "currentColor" : "none"}
                         />
                       </MessageAction>
 
@@ -113,14 +114,14 @@ const ConversationUI = ({
                         onClick={() =>
                           setDisliked((prev) => ({
                             ...prev,
-                            [id]: !prev[id],
+                            [index]: !prev[index],
                           }))
                         }
                         tooltip="Dislike this response"
                       >
                         <ThumbsDownIcon
                           className="size-4"
-                          fill={disliked[id] ? "currentColor" : "none"}
+                          fill={disliked[index] ? "currentColor" : "none"}
                         />
                       </MessageAction>
 

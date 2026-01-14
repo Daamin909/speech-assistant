@@ -1,7 +1,5 @@
 "use client";
 
-export const title = "React AI Prompt Input";
-
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -613,7 +611,10 @@ export const PromptInput = ({
   useEffect(() => {
     const form = formRef.current;
     if (!form) return;
-    if (globalDrop) return // when global drop is on, let the document-level handler own drops
+    if (globalDrop) {
+      // when global drop is on, let the document-level handler own drops
+      return;
+    }
 
     const onDragOver = (e: DragEvent) => {
       if (e.dataTransfer?.types?.includes("Files")) {

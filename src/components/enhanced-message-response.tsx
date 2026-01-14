@@ -18,8 +18,8 @@ export const EnhancedMessageResponse = ({
     let lastIndex = 0;
     let match;
 
-    const processedContent = content.replace(/\r\n/g, '\n');
-    
+    const processedContent = content.replace(/\r\n/g, "\n");
+
     while ((match = regex.exec(processedContent)) !== null) {
       if (match.index > lastIndex) {
         const beforeText = processedContent.slice(lastIndex, match.index);
@@ -69,7 +69,7 @@ export const EnhancedMessageResponse = ({
 
   if (typeof children === "string") {
     const hasSpecialMarkers = /\$\$%%/.test(children);
-    
+
     if (hasSpecialMarkers) {
       return <div className="space-y-2">{processContent(children)}</div>;
     }

@@ -1,16 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-interface MessagesType {
-  role?: "user" | "assistant";
-  content?: string;
-}
+import type { ChatMessage } from "@/types/chat";
+import type { Dispatch, RefObject, SetStateAction } from "react";
 
-const processVoiceChat = async (
-  audioBlob: Blob,
-  setMessages: any,
-  messages: any,
-  respRef: any,
-  setError: any
-) => {
+type ProcessVoiceChatArgs = {
+  audioBlob: Blob;
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  getMessages: () => ChatMessage[];
+  respRef: RefObject<HTMLAudioElement | null>;
+  setError: (error: string) => void;
+};
+
+const processVoiceChat = async ({
+  audioBlob,
+  setMessages,
+  getMessages,
+  respRef,
+  setError,
+}: ProcessVoiceChatArgs) => {
   try {
     const formData = new FormData();
     formData.append("audio", audioBlob, "recording.webm");
@@ -24,19 +29,24 @@ const processVoiceChat = async (
     }
     const { text } = await transcript.json();
 
-    setMessages((prev: any) => [
-      ...prev,
-      {
-        role: "user",
-        content: text,
-      },
-    ]);
+    if (typeof text !== "string" || text.trim().length === 0) {
+      throw new Error("empty transcription");
+    }
+
+    const userMessage: ChatMessage = {
+      role: "user",
+      content: text,
+    };
+
+    const nextMessages = [...getMessages(), userMessage];
+
+    setMessages((prev) => prev.concat(userMessage));
 
     const chatRes = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        messages: [...messages, { role: "user", content: text }],
+        messages: nextMessages.map(({ role, content }) => ({ role, content })),
       }),
     });
 
@@ -52,13 +62,7 @@ const processVoiceChat = async (
       throw new Error("No response stream available");
     }
 
-    setMessages((prev: any) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: "",
-      },
-    ]);
+    setMessages((prev) => prev.concat({ role: "assistant", content: "" }));
 
     while (true) {
       const { done, value } = await reader.read();
@@ -67,17 +71,21 @@ const processVoiceChat = async (
       const chunk = decoder.decode(value, { stream: true });
       chatResponse += chunk;
 
-      setMessages((prev: any) => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: "assistant",
-          content: chatResponse,
-        };
-        return newMessages;
+      setMessages((prev) => {
+        const next = [...prev];
+        const lastIndex = next.length - 1;
+        if (lastIndex >= 0) {
+          next[lastIndex] = { ...next[lastIndex], content: chatResponse };
+        }
+        return next;
       });
     }
 
     const cleanedText = chatResponse.replace(/\$\$%%/g, "");
+
+    if (cleanedText.trim().length === 0) {
+      return;
+    }
 
     const ttsResponse = await fetch("/api/text-to-speech", {
       method: "POST",
@@ -92,9 +100,13 @@ const processVoiceChat = async (
     const ttsAudioBlob = await ttsResponse.blob();
     const audioUrl = URL.createObjectURL(ttsAudioBlob);
 
-    if (respRef.current) {
-      respRef.current.src = audioUrl;
-      respRef.current.play();
+    const audioEl = respRef.current;
+    if (audioEl) {
+      if (audioEl.src?.startsWith("blob:")) {
+        URL.revokeObjectURL(audioEl.src);
+      }
+      audioEl.src = audioUrl;
+      void audioEl.play().catch(() => {});
     }
   } catch (err) {
     console.error("error:", err);

@@ -7,11 +7,18 @@ const openai = new OpenAI({
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const audioFile = formData.get("audio") as File;
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "missing OpenAI API key" },
+        { status: 500 }
+      );
+    }
 
-    if (!audioFile) {
-      return NextResponse.json({ error: "no audio found" }, { status: 500 });
+    const formData = await request.formData();
+    const audioFile = formData.get("audio");
+
+    if (!audioFile || !(audioFile instanceof File)) {
+      return NextResponse.json({ error: "no audio found" }, { status: 400 });
     }
 
     const transcription = await openai.audio.transcriptions.create({

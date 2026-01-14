@@ -7,16 +7,23 @@ const openai = new OpenAI({
 
 export async function POST(request: Request) {
   try {
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "missing OpenAI API key" },
+        { status: 500 }
+      );
+    }
+
     const { text } = await request.json();
 
-    if (!text) {
+    if (typeof text !== "string" || text.trim().length === 0) {
       return NextResponse.json({ error: "no text found" }, { status: 400 });
     }
 
     const response = await openai.audio.speech.create({
       model: "tts-1",
       voice: "alloy",
-      input: text,
+      input: text.trim(),
       response_format: "mp3",
     });
 
