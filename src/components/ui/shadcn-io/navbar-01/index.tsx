@@ -15,6 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Simple logo component for the navbar
 const Logo = (props: React.SVGAttributes<SVGElement>) => {
@@ -245,8 +246,9 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
             </div>
           </div>
           {/* Right side */}
-          {/* <div className="flex items-center gap-3">
-            <Button
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            {/* <Button
               variant="ghost"
               size="sm"
               className="text-sm font-medium hover:bg-accent hover:text-accent-foreground"
@@ -266,8 +268,8 @@ export const Navbar01 = React.forwardRef<HTMLElement, Navbar01Props>(
               }}
             >
               {ctaText}
-            </Button>
-          </div> */}
+            </Button> */}
+          </div>
         </div>
       </header>
     );
