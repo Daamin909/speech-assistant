@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import ConversationUI from "../components/conversationUI";
 import { MicrophoneVisualizer } from "@/components/microphone-visualizer";
-import { LoadingIndicator } from "@/components/loading-indicator";
 import { processVoiceChat } from "@/utils/processVoiceChat";
 import type { ChatMessage } from "@/types/chat";
 
@@ -19,7 +18,6 @@ export default function Home() {
 
   const [hasStarted, setHasStarted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -101,7 +99,6 @@ export default function Home() {
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
         mediaRecorder.stream.getTracks().forEach((track) => track.stop());
-        setIsProcessing(true);
         await processVoiceChat({
           audioBlob,
           setMessages,
@@ -109,7 +106,6 @@ export default function Home() {
           respRef,
           setError,
         });
-        setIsProcessing(false);
       };
       mediaRecorder.stop();
       setIsRecording(false);
@@ -119,7 +115,6 @@ export default function Home() {
   const reset = () => {
     setHasStarted(false);
     setIsRecording(false);
-    setIsProcessing(false);
     setError("");
     setMessages([]);
   };
@@ -136,11 +131,6 @@ export default function Home() {
         onStartRecording={startRecording}
         onStopRecording={stopRecording}
       />
-      {isProcessing && (
-        <div className="absolute inset-0 flex items-center justify-center z-40 bg-background/80 backdrop-blur-sm">
-          <LoadingIndicator message="Processing your message..." />
-        </div>
-      )}
       {error && (
         <div className="absolute inset-0 flex items-center justify-center z-50 bg-background/95 animate-fade-in">
           <div className="max-w-md w-full mx-4 flex flex-col gap-6">

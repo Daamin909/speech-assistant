@@ -73,9 +73,53 @@ const ConversationUI = ({
                 <Message from={message.role}>
                   <MessageContent>
                     {message.role === "assistant" ? (
-                      <EnhancedMessageResponse>
-                        {message.content}
-                      </EnhancedMessageResponse>
+                      message.isGenerating ? (
+                        <span className="inline-flex gap-1 opacity-50">
+                          <span
+                            className="animate-bounce"
+                            style={{ animationDelay: "0ms" }}
+                          >
+                            .
+                          </span>
+                          <span
+                            className="animate-bounce"
+                            style={{ animationDelay: "150ms" }}
+                          >
+                            .
+                          </span>
+                          <span
+                            className="animate-bounce"
+                            style={{ animationDelay: "300ms" }}
+                          >
+                            .
+                          </span>
+                        </span>
+                      ) : (
+                        <EnhancedMessageResponse>
+                          {message.content}
+                        </EnhancedMessageResponse>
+                      )
+                    ) : message.isTranscribing ? (
+                      <span className="inline-flex gap-1 opacity-50">
+                        <span
+                          className="animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        >
+                          .
+                        </span>
+                        <span
+                          className="animate-bounce"
+                          style={{ animationDelay: "150ms" }}
+                        >
+                          .
+                        </span>
+                        <span
+                          className="animate-bounce"
+                          style={{ animationDelay: "300ms" }}
+                        >
+                          .
+                        </span>
+                      </span>
                     ) : (
                       message.content
                     )}

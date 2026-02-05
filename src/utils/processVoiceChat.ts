@@ -17,6 +17,15 @@ const processVoiceChat = async ({
   setError,
 }: ProcessVoiceChatArgs) => {
   try {
+    // Add placeholder message for user with transcribing state
+    setMessages((prev) =>
+      prev.concat({
+        role: "user",
+        content: "",
+        isTranscribing: true,
+      }),
+    );
+
     const formData = new FormData();
     formData.append("audio", audioBlob, "recording.webm");
     const transcript = await fetch("/api/speech-to-text", {
@@ -38,9 +47,23 @@ const processVoiceChat = async ({
       content: text,
     };
 
+    // Update the user message with transcribed text
+    setMessages((prev) => {
+      const next = [...prev];
+      next[next.length - 1] = userMessage;
+      return next;
+    });
+
     const nextMessages = [...getMessages(), userMessage];
 
-    setMessages((prev) => prev.concat(userMessage));
+    // Add placeholder for assistant message with generating state
+    setMessages((prev) =>
+      prev.concat({
+        role: "assistant",
+        content: "",
+        isGenerating: true,
+      }),
+    );
 
     const chatRes = await fetch("/api/chat", {
       method: "POST",
@@ -62,8 +85,7 @@ const processVoiceChat = async ({
       throw new Error("No response stream available");
     }
 
-    setMessages((prev) => prev.concat({ role: "assistant", content: "" }));
-
+    // Stream response to UI for immediate feedback
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -75,7 +97,7 @@ const processVoiceChat = async ({
         const next = [...prev];
         const lastIndex = next.length - 1;
         if (lastIndex >= 0) {
-          next[lastIndex] = { ...next[lastIndex], content: chatResponse };
+          next[lastIndex] = { role: "assistant", content: chatResponse };
         }
         return next;
       });
@@ -87,27 +109,128 @@ const processVoiceChat = async ({
       return;
     }
 
-    const ttsResponse = await fetch("/api/text-to-speech", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: cleanedText }),
-    });
+    // Stream TTS audio in background with progressive playback
+    void (async () => {
+      try {
+        const ttsResponse = await fetch("/api/text-to-speech", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: cleanedText }),
+        });
 
-    if (!ttsResponse.ok) {
-      throw new Error("Failed to get TTS response");
-    }
+        if (!ttsResponse.ok || !ttsResponse.body) return;
 
-    const ttsAudioBlob = await ttsResponse.blob();
-    const audioUrl = URL.createObjectURL(ttsAudioBlob);
+        const audioEl = respRef.current;
+        if (!audioEl) return;
 
-    const audioEl = respRef.current;
-    if (audioEl) {
-      if (audioEl.src?.startsWith("blob:")) {
-        URL.revokeObjectURL(audioEl.src);
+        // Check if MediaSource is supported for progressive playback
+        if (
+          typeof window !== "undefined" &&
+          "MediaSource" in window &&
+          MediaSource.isTypeSupported("audio/mpeg")
+        ) {
+          const mediaSource = new MediaSource();
+          const audioUrl = URL.createObjectURL(mediaSource);
+
+          if (audioEl.src?.startsWith("blob:")) {
+            URL.revokeObjectURL(audioEl.src);
+          }
+          audioEl.src = audioUrl;
+
+          const openPromise = new Promise<void>((resolve) => {
+            mediaSource.addEventListener("sourceopen", () => resolve(), {
+              once: true,
+            });
+          });
+
+          await openPromise;
+
+          const sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
+          const reader = ttsResponse.body.getReader();
+          let hasStartedPlaying = false;
+
+          const appendNextChunk = async (chunk: Uint8Array): Promise<void> => {
+            return new Promise((resolve, reject) => {
+              const onUpdateEnd = () => {
+                sourceBuffer.removeEventListener("updateend", onUpdateEnd);
+                sourceBuffer.removeEventListener("error", onError);
+                resolve();
+              };
+
+              const onError = () => {
+                sourceBuffer.removeEventListener("updateend", onUpdateEnd);
+                sourceBuffer.removeEventListener("error", onError);
+                reject(new Error("SourceBuffer error"));
+              };
+
+              sourceBuffer.addEventListener("updateend", onUpdateEnd);
+              sourceBuffer.addEventListener("error", onError);
+
+              try {
+                sourceBuffer.appendBuffer(chunk);
+              } catch (e) {
+                sourceBuffer.removeEventListener("updateend", onUpdateEnd);
+                sourceBuffer.removeEventListener("error", onError);
+                reject(e);
+              }
+            });
+          };
+
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+
+              if (done) {
+                if (mediaSource.readyState === "open") {
+                  mediaSource.endOfStream();
+                }
+                break;
+              }
+
+              await appendNextChunk(value);
+
+              // Start playing after first chunk is buffered
+              if (!hasStartedPlaying && sourceBuffer.buffered.length > 0) {
+                void audioEl.play().catch(() => {});
+                hasStartedPlaying = true;
+              }
+            }
+          } catch (err) {
+            console.error("TTS stream error:", err);
+          }
+
+          audioEl.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+          };
+        } else {
+          // Fallback: buffer complete response
+          const reader = ttsResponse.body.getReader();
+          const chunks: Uint8Array[] = [];
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+          }
+
+          const audioBlob = new Blob(chunks, { type: "audio/mpeg" });
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          if (audioEl.src?.startsWith("blob:")) {
+            URL.revokeObjectURL(audioEl.src);
+          }
+          audioEl.src = audioUrl;
+          void audioEl.play().catch(() => {});
+
+          audioEl.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+          };
+        }
+      } catch (err) {
+        console.error("TTS error:", err);
+        // Silently fail TTS - user still has text
       }
-      audioEl.src = audioUrl;
-      void audioEl.play().catch(() => {});
-    }
+    })();
   } catch (err) {
     console.error("error:", err);
     setError(err instanceof Error ? err.message : "error occurred");
