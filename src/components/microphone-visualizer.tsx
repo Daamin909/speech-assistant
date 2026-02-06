@@ -30,7 +30,6 @@ export const MicrophoneVisualizer = ({
 
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
-      {/* Main button */}
       <button
         onClick={onClick}
         className={cn(
@@ -39,7 +38,7 @@ export const MicrophoneVisualizer = ({
           "flex items-center justify-center border-2",
           isRecording
             ? "bg-red-500 hover:bg-red-600 border-red-600"
-            : "bg-primary hover:bg-primary/90 border-foreground/20 hover:border-foreground/30"
+            : "bg-primary hover:bg-primary/90 border-foreground/20 hover:border-foreground/30",
         )}
       >
         <MicIcon className={cn(iconSizes[size], "text-primary-foreground")} />

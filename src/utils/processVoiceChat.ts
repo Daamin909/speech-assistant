@@ -17,7 +17,6 @@ const processVoiceChat = async ({
   setError,
 }: ProcessVoiceChatArgs) => {
   try {
-    // Add placeholder message for user with transcribing state
     setMessages((prev) =>
       prev.concat({
         role: "user",
@@ -47,7 +46,6 @@ const processVoiceChat = async ({
       content: text,
     };
 
-    // Update the user message with transcribed text
     setMessages((prev) => {
       const next = [...prev];
       next[next.length - 1] = userMessage;
@@ -56,7 +54,6 @@ const processVoiceChat = async ({
 
     const nextMessages = [...getMessages(), userMessage];
 
-    // Add placeholder for assistant message with generating state
     setMessages((prev) =>
       prev.concat({
         role: "assistant",
@@ -85,7 +82,6 @@ const processVoiceChat = async ({
       throw new Error("No response stream available");
     }
 
-    // Stream response to UI for immediate feedback
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -109,7 +105,6 @@ const processVoiceChat = async ({
       return;
     }
 
-    // Stream TTS audio in background with progressive playback
     void (async () => {
       try {
         const ttsResponse = await fetch("/api/text-to-speech", {
@@ -123,7 +118,6 @@ const processVoiceChat = async ({
         const audioEl = respRef.current;
         if (!audioEl) return;
 
-        // Check if MediaSource is supported for progressive playback
         if (
           typeof window !== "undefined" &&
           "MediaSource" in window &&
@@ -167,7 +161,7 @@ const processVoiceChat = async ({
               sourceBuffer.addEventListener("error", onError);
 
               try {
-                sourceBuffer.appendBuffer(chunk);
+                sourceBuffer.appendBuffer(chunk.slice());
               } catch (e) {
                 sourceBuffer.removeEventListener("updateend", onUpdateEnd);
                 sourceBuffer.removeEventListener("error", onError);
@@ -189,7 +183,6 @@ const processVoiceChat = async ({
 
               await appendNextChunk(value);
 
-              // Start playing after first chunk is buffered
               if (!hasStartedPlaying && sourceBuffer.buffered.length > 0) {
                 void audioEl.play().catch(() => {});
                 hasStartedPlaying = true;
@@ -203,7 +196,6 @@ const processVoiceChat = async ({
             URL.revokeObjectURL(audioUrl);
           };
         } else {
-          // Fallback: buffer complete response
           const reader = ttsResponse.body.getReader();
           const chunks: Uint8Array[] = [];
 
@@ -213,7 +205,10 @@ const processVoiceChat = async ({
             chunks.push(value);
           }
 
-          const audioBlob = new Blob(chunks, { type: "audio/mpeg" });
+          const audioBlob = new Blob(
+            chunks.map((chunk) => chunk.slice()),
+            { type: "audio/mpeg" },
+          );
           const audioUrl = URL.createObjectURL(audioBlob);
 
           if (audioEl.src?.startsWith("blob:")) {
@@ -228,7 +223,6 @@ const processVoiceChat = async ({
         }
       } catch (err) {
         console.error("TTS error:", err);
-        // Silently fail TTS - user still has text
       }
     })();
   } catch (err) {
