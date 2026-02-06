@@ -12,3 +12,8 @@ What does this do?
 - Text to speech and speech to text.
 - Clickable exercise-words, which you can find the pronunciation of.
 
+## How to use?
+
+Everything is super intuitive. In order to use the word-pronunciation feature, click on each specific word from the exercises.
+
+<img width="1582" height="953" alt="Screenshot 2026-02-06 at 4 05 09 PM" src="https://github.com/user-attachments/assets/d7a4deee-3a55-48dd-8779-f353c913ac91" />
